@@ -115,6 +115,7 @@ PetscErrorCode JacResCreate(JacRes *jr, FB *fb)
 	ierr = getIntParam   (fb, _OPTIONAL_, "useTk",           &ctrl->useTk,           1, 1);             CHKERRQ(ierr);
 	ierr = getIntParam   (fb, _OPTIONAL_, "dikeHeat",        &ctrl->dikeHeat,        1, 1);             CHKERRQ(ierr);
 	ierr = getIntParam   (fb, _OPTIONAL_, "actHeatZone",			 &ctrl->actHeatZone,           1, 1);             CHKERRQ(ierr);
+	ierr = getIntParam   (fb, _OPTIONAL_, "useTDk",           &ctrl->useTDk,           1, 1);             CHKERRQ(ierr); //*mcr
 
 //
 	if     (!strcmp(gwtype, "none"))  ctrl->gwType = _GW_NONE_;
@@ -276,6 +277,7 @@ PetscErrorCode JacResCreate(JacRes *jr, FB *fb)
 	if(ctrl->Phasetrans)     PetscPrintf(PETSC_COMM_WORLD, "   Phase transitions are active            @ \n");
 	if(ctrl->Passive_Tracer) PetscPrintf(PETSC_COMM_WORLD, "   Passive Tracers are active              @ \n");
 	if(ctrl->useTk)          PetscPrintf(PETSC_COMM_WORLD, "   Use Temperature-dependent conductivity  @ \n");
+	if(ctrl->useTDk)          PetscPrintf(PETSC_COMM_WORLD, "   Use Temperature & Depth-dependent conductivity  @ \n"); //*mcr
 	PetscPrintf(PETSC_COMM_WORLD, "   Ground water level type                 : ");
 	if     (ctrl->gwType == _GW_NONE_)  PetscPrintf(PETSC_COMM_WORLD, "none \n");
 	else if(ctrl->gwType == _GW_TOP_)   PetscPrintf(PETSC_COMM_WORLD, "top of the domain \n");

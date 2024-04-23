@@ -46,7 +46,7 @@
 // Temperature parameters functions
 //---------------------------------------------------------------------------
 PetscErrorCode JacResGetTempParam(
-	JacRes      *jr,
+	JacRes      *jr,  
 	PetscScalar *phRat,
 	PetscScalar *k_,      // conductivity
 	PetscScalar *rho_Cp_, // volumetric heat capacity
@@ -56,17 +56,21 @@ PetscErrorCode JacResGetTempParam(
     PetscScalar x_c,      // center of cell in x-direction
     PetscScalar z_c,      // center of cell in z-direction
     PetscInt J,           // coordinate of cell
-    PetscScalar sxx_eff_ave_cell) // lithospheric sxx
+    PetscScalar sxx_eff_ave_cell // lithospheric sxx
+	) 	 
 
 {
 	// compute effective energy parameters in the cell
 
-	PetscInt    i, numPhases, AirPhase;
+	PetscInt    i, j, numPhases, AirPhase;
 	Material_t  *phases, *M;
+	FreeSurf    *surf; 
 	Controls    ctrl;
-	PetscScalar cf, k, rho, rho_Cp, rho_A, density, nu_k, T_Nu; 
+	PetscScalar cf, k, rho, rho_Cp, rho_A, density, nu_k, T_Nu, z_Nu, surf_depth; 
+	PetscInt    L;        //*mcr
+	PetscScalar ***gtopo; // *mcr
 
-	//PetscErrorCode ierr;
+	PetscErrorCode ierr; // *mcr uncommended this out
 
 	PetscFunctionBeginUser;
 
@@ -76,13 +80,17 @@ PetscErrorCode JacResGetTempParam(
 	rho_A     = 0.0;
 	nu_k      = 0.0;
 	T_Nu	  = 0.0;
-	
+	Tc    	  = 0.0;   // temperature at location *mcr already exists
+	z_Nu      = 0.0;   // definition of conductivity boundary depth (6km) *mcr
+//	A_cooling = 0.75;   // Smoothing coefficient for hydrothermal cooling *mcr
+
 	numPhases = jr->dbm->numPhases;
 	phases    = jr->dbm->phases;
 	density   = jr->scal->density;
 	AirPhase  = jr->surf->AirPhase;
+	L         = (PetscInt)fs->dsz.rank;  //*mcr
 
-	// access the control which contains switch for T-dep conductivity
+	// access the control which contains switch for T-dep conductivity and T-D-dep conductivity
 	ctrl      = jr->ctrl;  
 
 	// average all phases
@@ -114,6 +122,19 @@ PetscErrorCode JacResGetTempParam(
 		    T_Nu +=  cf*M->T_Nu;
 		}
 		
+		// Temperature-Depth dependent conductivity: phase-dependent nusselt number *mcr
+		if(ctrl.useTDk)
+		{
+ 			if(! M->nu_k)
+		      {
+			// set Nusselt number = 1 if not defined 
+			M->nu_k = 1.0;
+		      }
+		    nu_k +=  cf*M->nu_k;
+		    T_Nu +=  cf*M->T_Nu;
+		    z_Nu +=  cf*M->z_Nu;
+
+		} //*mcr
 	}
 
 	// switch and temperature condition to use T-dep conductivity
@@ -121,6 +142,27 @@ PetscErrorCode JacResGetTempParam(
 	{
 	    k = k*nu_k;
 	}
+
+	// switch and temperature / depth condition to use T-D-dep conductivity adapted from Gregg et al., 2009 *mcr
+		// get topography / depth of surface *mcr
+		ierr = DMDAVecGetArray(surf->DA_SURF, surf->gtopo, &gtopo); CHKERRQ(ierr);
+		
+	//	START_PLANE_LOOP
+	//		???[L][j][i]=gtopo[L][j][i];
+	//	END_PLANE_LOOP
+
+		// new variable for depth
+		surf_depth = gtopo[L][j][i] + z_Nu
+
+		// restore access
+		ierr = DMDAVecRestoreArray(surf->DA_SURF, surf->gtopo, &gtopo); CHKERRQ(ierr); 
+
+	if(ctrl.useTDk && Tc <= T_Nu && z_c <= gtopo[L][j][i] && z_c >= surf_depth)
+	{
+		k = k + k*(nu_k - 1) * (1 - (Tc/T_Nu)) * (1 - ((z_c - gtopo[L][j][i]) / (z_Nu)))
+	} //*mcr 
+	//figure out how to pass gtopo and also debug it 
+	
 
 	if (ctrl.actDike && ctrl.dikeHeat)
 	{
@@ -509,11 +551,11 @@ PetscErrorCode JacResGetTempRes(JacRes *jr, PetscScalar dt)
 			sxx_eff_ave_cell = gsxx_eff_ave[L][j][i];
 
 			PetscCall(JacResGetTempParam(jr, svCell->phRat, &kc, &rho_Cp, &rho_A, Tc, y_c, x_c, z_c, j-sy, sxx_eff_ave_cell));
-		}
+		} // dike on
 		else
 		{
 			PetscCall(JacResGetTempParam(jr, svCell->phRat, &kc, &rho_Cp, &rho_A, Tc, y_c, x_c, z_c, j-sy, 1.0));
-		}
+		} // no dike
 		
 
 		// shear heating term (effective)

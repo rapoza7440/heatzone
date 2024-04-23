@@ -45,7 +45,7 @@ public:
   PetscScalar y_Mc;      // location in y direction of Mc, if in x-direction x_Mc needs to be given or in z-direction z_Mc
   PetscScalar x_Mc;
   PetscScalar z_Mc;
-  PetscScalar Tsol;
+  PetscScalar Tsol;      // Temperature of solidus 
   PetscScalar filtx; 
   PetscScalar filty;
   //PetscScalar ymindyn;

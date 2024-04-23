@@ -68,7 +68,7 @@ struct SolVarBulk
 //........................   Cell solution variables   ......................
 //---------------------------------------------------------------------------
 
-struct SolVarCell
+struct SolVarCell    
 {
 	SolVarDev    svDev;         // deviatoric variables
 	SolVarBulk   svBulk;        // volumetric variables
@@ -86,6 +86,7 @@ struct SolVarCell
 	PetscScalar  DIIfk;         // relative Frank-Kamenetzky creep strain rate
 	PetscScalar  DIIpl;         // relative plastic strain rate
 	PetscScalar  yield;         // average yield stress in control volume
+//	PetscScalar  zsurf;         // depth of surface; where sticky air changes to material *mcr
 
 };
 
@@ -170,6 +171,7 @@ struct Controls
 	PetscInt	var_M;          // Flag to activate M controlled by bulk viscosity and stress-field
 	PetscInt	actHeatZone;    // Flag to activate user defined heat zones	
   	PetscInt    useTk;			// activation flag for using temperature-dependent conductivity
+	PetscInt    useTDk;         // activation flag for using temperature-depth dependent conductivity *mcr
   	PetscInt 	dikeHeat;		// activation flag for using Behn & Ito heat source in dike
 };
 

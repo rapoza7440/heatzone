@@ -450,6 +450,9 @@ PetscErrorCode DBMatReadPhase(DBMat *dbm, FB *fb, PetscBool PrintOutput)
 	ierr = getScalarParam(fb, _OPTIONAL_, "T_liq",    &m->T_liq,  1, 1.0); CHKERRQ(ierr);
 	ierr = getScalarParam(fb, _OPTIONAL_, "T_sol",    &m->T_sol,  1, 1.0); CHKERRQ(ierr);
 
+	ierr = getScalarParam(fb, _OPTIONAL_, "z_Nu",	&m->z_Nu, 1, 1.0); CHKERRQ(ierr); // *mcr
+//	ierr = getScalarParam(fb, _OPTIONAL_, "A_cooling",	&m->A_cooling, 1, 1.0); CHKERRQ(ierr); // *mcr
+
 	//=================================================================================
 	// melt fraction viscosity parametrization
 	//=================================================================================
