@@ -64,7 +64,7 @@ PetscErrorCode JacResGetTempParam(
 
 	PetscInt    i, j, numPhases, AirPhase;
 	Material_t  *phases, *M;
-	FreeSurf    *surf; 
+	FreeSurf    *surf;   //*mcr
 	Controls    ctrl;
 	PetscScalar cf, k, rho, rho_Cp, rho_A, density, nu_k, T_Nu, z_Nu, surf_depth; 
 	PetscInt    L;        //*mcr
@@ -144,24 +144,24 @@ PetscErrorCode JacResGetTempParam(
 	}
 
 	// switch and temperature / depth condition to use T-D-dep conductivity adapted from Gregg et al., 2009 *mcr
-		// get topography / depth of surface *mcr
+		// get topography / depth of surface from top of model *mcr
 		ierr = DMDAVecGetArray(surf->DA_SURF, surf->gtopo, &gtopo); CHKERRQ(ierr);
 		
-	//	START_PLANE_LOOP
-	//		???[L][j][i]=gtopo[L][j][i];
-	//	END_PLANE_LOOP
+		START_PLANE_LOOP
+			surface[L][j][i]=gtopo[L][j][i];
+		END_PLANE_LOOP
 
 		// new variable for depth
-		surf_depth = gtopo[L][j][i] + z_Nu
+		surf_depth = surface[L][j][i] + z_Nu;
 
 		// restore access
 		ierr = DMDAVecRestoreArray(surf->DA_SURF, surf->gtopo, &gtopo); CHKERRQ(ierr); 
 
-	if(ctrl.useTDk && Tc <= T_Nu && z_c <= gtopo[L][j][i] && z_c >= surf_depth)
+	if(ctrl.useTDk && Tc <= T_Nu && z_c <= surface[L][j][i] && z_c >= surf_depth)
 	{
-		k = k + k*(nu_k - 1) * (1 - (Tc/T_Nu)) * (1 - ((z_c - gtopo[L][j][i]) / (z_Nu)))
+		k = k + k*(nu_k - 1) * (1 - (Tc/T_Nu)) * (1 - ((z_c - surface[L][j][i]) / (z_Nu)));
 	} //*mcr 
-	//figure out how to pass gtopo and also debug it 
+
 	
 
 	if (ctrl.actDike && ctrl.dikeHeat)
